@@ -1,7 +1,8 @@
 # ジェネリクス
 
-!!! note "全体を通すルール"
-    コンパイラは**変数の宣言型だけ**を見て判断する。実際に何が入っているかは見ない。
+> **全体を通すルール**
+>
+> コンパイラは**変数の宣言型だけ**を見て判断する。実際に何が入っているかは見ない。
 
 - ジェネリクスとは、クラスやインタフェースの定義時点で型をパラメータ化しておき、利用時に具体的な型を指定する
 - ジェネリクスを指定したクラスをジェネリッククラス、インタフェースをジェネリックインタフェースと呼ぶ
@@ -32,15 +33,13 @@ interface Bar<T,R> {}
 
 ## 原型（raw type）
 
-!!! note "要点"
-    `<>` を省略してジェネリクスのクラスを使うと、T はすべて **Object** として扱われる。
-    中身が String でも、String では受け取れない。
+> **要点**
+>
+> `<>` を省略してジェネリクスのクラスを使うと、T はすべて **Object** として扱われる。
+> 中身が String でも、String では受け取れない。
 
-原型（raw type）
-:   型パラメータを持つクラスを `<>` なしで使う書き方。コンパイル時に unchecked 警告が出るが、エラーではない。
-
-型消去（type erasure）
-:   型のチェックはコンパイル時に行われる。実行時には型パラメータの情報は消え、Object として扱われる。
+- **原型（raw type）**：型パラメータを持つクラスを `<>` なしで使う書き方。コンパイル時に unchecked 警告が出るが、エラーではない。
+- **型消去（type erasure）**：型のチェックはコンパイル時に行われる。実行時には型パラメータの情報は消え、Object として扱われる。
 
 ```java
 public class Box<T> {
@@ -63,11 +62,8 @@ public class Box<T> {
 
 ### キャストは変換ではない
 
-基本型のキャスト
-:   `(double) 100` → `100.0`。値を作り変える。
-
-参照型のキャスト
-:   `(String) obj`。何も作り変えない。中身がその型かどうかを確認するだけ。違えば実行時に `ClassCastException`。
+- **基本型のキャスト**：`(double) 100` → `100.0`。値を作り変える。
+- **参照型のキャスト**：`(String) obj`。何も作り変えない。中身がその型かどうかを確認するだけ。違えば実行時に `ClassCastException`。
 
 ```java
 Box raw = new Box(100);
@@ -77,29 +73,31 @@ String  s = (String)  raw.get();   // コンパイルは通る → 実行時 Cla
 
 数値を文字列にしたいときは、キャストではなく `String.valueOf(x)` や `x.toString()` を使う。
 
-??? question "`Box<Integer> b = new Box<>(100);` のとき `/* ここ */ a = b.get();` に入るのは？（Integer / Number / Object / String / int）"
-    Integer・Number・Object・int。Number と Object は親の型として受けられる。int はオートアンボクシング。String は親子関係がないので不可。
+<details>
+<summary><code>Box&lt;Integer&gt; b = new Box&lt;&gt;(100);</code> のとき <code>/* ここ */ a = b.get();</code> に入るのは？（Integer / Number / Object / String / int）</summary>
 
-??? question "`Box b = new Box(100); String s = (String) b.get();` はどうなる？"
-    コンパイルは通る（Object → String のキャストは文法上ありえる）。実行時に `ClassCastException`。
+Integer・Number・Object・int。Number と Object は親の型として受けられる。int はオートアンボクシング。String は親子関係がないので不可。
+
+</details>
+
+<details>
+<summary><code>Box b = new Box(100); String s = (String) b.get();</code> はどうなる？</summary>
+
+コンパイルは通る（Object → String のキャストは文法上ありえる）。実行時に `ClassCastException`。
+
+</details>
 
 ## 非変（invariance）
 
-!!! note "要点"
-    `A a = new B();` は通るが、`Item<A> a = new Item<B>();` は**通らない**。
-    `<>` の中は、親子関係があっても**同じ型どうししか代入できない**。
+> **要点**
+>
+> `A a = new B();` は通るが、`Item<A> a = new Item<B>();` は**通らない**。
+> `<>` の中は、親子関係があっても**同じ型どうししか代入できない**。
 
-変性
-:   親子関係のある型どうしを、どこまで代入可能とするかという性質。
-
-共変（covariance）
-:   子の型を親の型の変数に代入できる。**配列**はこれ。
-
-非変（invariance）
-:   子の型の代入も許さない。**ジェネリクス**はこれ。
-
-反変（contravariance）
-:   親の型の代入を許す。`<? super B>` がこの性質を持つ。
+- **変性**：親子関係のある型どうしを、どこまで代入可能とするかという性質。
+- **共変（covariance）**：子の型を親の型の変数に代入できる。**配列**はこれ。
+- **非変（invariance）**：子の型の代入も許さない。**ジェネリクス**はこれ。
+- **反変（contravariance）**：親の型の代入を許す。`<? super B>` がこの性質を持つ。
 
 B extends A のとき：
 
@@ -122,8 +120,12 @@ o[0] = Integer.valueOf(1);   // コンパイルは通る → 実行時 ArrayStor
 
 もし `List<Object> list = new ArrayList<String>();` が許されると、コンパイラは宣言型 `List<Object>` しか見ないので、`list.add(100)` を止められない。そのため、**入口の代入そのものを禁止した**。
 
-??? question "`List<Number> list = new ArrayList<Integer>();` は通る？"
-    通らない。非変なので、Integer が Number の子でも代入不可。通すなら `List<? extends Number>`。
+<details>
+<summary><code>List&lt;Number&gt; list = new ArrayList&lt;Integer&gt;();</code> は通る？</summary>
+
+通らない。非変なので、Integer が Number の子でも代入不可。通すなら `List<? extends Number>`。
+
+</details>
 
 ## ワイルドカード
 
@@ -131,12 +133,12 @@ o[0] = Integer.valueOf(1);   // コンパイルは通る → 実行時 ArrayStor
 
 ### 非境界ワイルドカード `<?>`
 
-!!! note "要点"
-    `<?>` は「何でもいい」ではなく「**何かに決まっているが、分からない**」。
-    取り出しは **Object** で受ける。入れられるのは **null だけ**。
+> **要点**
+>
+> `<?>` は「何でもいい」ではなく「**何かに決まっているが、分からない**」。
+> 取り出しは **Object** で受ける。入れられるのは **null だけ**。
 
-CAP#1
-:   コンパイラが「正体不明の型」に付ける仮の名前。エラーメッセージに出てくる。
+- **CAP#1**：コンパイラが「正体不明の型」に付ける仮の名前。エラーメッセージに出てくる。
 
 | | `Test<Object>` | `Test<?>` |
 |---|---|---|
@@ -156,17 +158,21 @@ test.setValue(null);              // ✅ null はどの参照型にも代入で�
 
 Object を入れられないのは、箱の正体が `Test<Integer>` かもしれないから。Object を入れられたら、むしろ一番危険になる。
 
-??? question "`Test<?> t = new Test<>(10);` のとき、通るのは？ (ア) `Integer a = t.getValue();` (イ) `Object b = t.getValue();` (ウ) `t.setValue(20);` (エ) `t.setValue(null);`"
-    (イ)と(エ)。右辺の 10 はコンパイラに見えていない。`t` には後から `Test<String>` を代入することもできるので、20 は入れられない。
+<details>
+<summary><code>Test&lt;?&gt; t = new Test&lt;&gt;(10);</code> のとき、通るのは？ (ア) <code>Integer a = t.getValue();</code> (イ) <code>Object b = t.getValue();</code> (ウ) <code>t.setValue(20);</code> (エ) <code>t.setValue(null);</code></summary>
+
+(イ)と(エ)。右辺の 10 はコンパイラに見えていない。`t` には後から `Test<String>` を代入することもできるので、20 は入れられない。
+
+</details>
 
 ### 上限境界ワイルドカード `<? extends>`
 
-!!! note "要点"
-    `<? extends Number>` ＝「Number **か、その子の何か**用の箱。どれかは分からない」。
-    取り出しは **Number** で受けられる。入れられるのは **null だけ**（`<?>` と同じ）。
+> **要点**
+>
+> `<? extends Number>` ＝「Number **か、その子の何か**用の箱。どれかは分からない」。
+> 取り出しは **Number** で受けられる。入れられるのは **null だけ**（`<?>` と同じ）。
 
-上限境界ワイルドカード
-:   `<? extends B>`。B か、B の子だけを型パラメータとして受け付ける。B 自身も含む。
+- **上限境界ワイルドカード**：`<? extends B>`。B か、B の子だけを型パラメータとして受け付ける。B 自身も含む。
 
 ```java
 List<? extends Number> list = new ArrayList<Integer>();
@@ -180,14 +186,19 @@ Integer i = list.get(0);      // ❌ CAP#1 cannot be converted to Integer
 
 Number は Integer・Double などの親で、インタフェースではなく**抽象クラス**。
 
-??? question "`List<? extends Number> list = new ArrayList<Double>();` のとき、通るのは？ (ア) `Number n = list.get(0);` (イ) `Double d = list.get(0);` (ウ) `Object o = list.get(0);` (エ) `list.add(1.5);` (オ) `list.add(null);`"
-    (ア)(ウ)(オ)。(イ)は、右辺が Double でもコンパイラには見えていない。(エ)は null 以外なので不可。
+<details>
+<summary><code>List&lt;? extends Number&gt; list = new ArrayList&lt;Double&gt;();</code> のとき、通るのは？ (ア) <code>Number n = list.get(0);</code> (イ) <code>Double d = list.get(0);</code> (ウ) <code>Object o = list.get(0);</code> (エ) <code>list.add(1.5);</code> (オ) <code>list.add(null);</code></summary>
+
+(ア)(ウ)(オ)。(イ)は、右辺が Double でもコンパイラには見えていない。(エ)は null 以外なので不可。
+
+</details>
 
 ### 下限境界ワイルドカード `<? super>`
 
-!!! note "要点"
-    `<? super B>` ＝「B **か、B より上**」。B 自身も含む。
-    入れるときは **B と B の子**を入れられる。取り出しは **Object** で受ける。
+> **要点**
+>
+> `<? super B>` ＝「B **か、B より上**」。B 自身も含む。
+> 入れるときは **B と B の子**を入れられる。取り出しは **Object** で受ける。
 
 UML のクラス図では、白抜き三角の矢印は **子 → 親** の向きに引く。
 
@@ -212,14 +223,15 @@ Object o = a.getValue();             // ✅
 B bb = a.getValue();                 // ❌ CAP#1 cannot be converted to B
 ```
 
-入れる（set）
-:   箱の正体は `Test<B>`・`Test<A>`・`Test<Object>` のどれか。どれでも B は入る（B の子の C も入る）。A は `Test<B>` だった場合に入らないので不可。
+- **入れる（set）**：箱の正体は `Test<B>`・`Test<A>`・`Test<Object>` のどれか。どれでも B は入る（B の子の C も入る）。A は `Test<B>` だった場合に入らないので不可。
+- **取り出し（get）**：中身は A かもしれないし Object かもしれないので、確実なのは Object だけ。
 
-取り出し（get）
-:   中身は A かもしれないし Object かもしれないので、確実なのは Object だけ。
+<details>
+<summary><code>List&lt;? super Integer&gt; list = new ArrayList&lt;Number&gt;();</code> のとき、通るのは？ (ア) <code>list.add(10);</code> (イ) <code>list.add(3.14);</code> (ウ) <code>Number n = list.get(0);</code> (エ) <code>Object o = list.get(0);</code> (オ) <code>List&lt;? super Integer&gt; l2 = new ArrayList&lt;Object&gt;();</code></summary>
 
-??? question "`List<? super Integer> list = new ArrayList<Number>();` のとき、通るのは？ (ア) `list.add(10);` (イ) `list.add(3.14);` (ウ) `Number n = list.get(0);` (エ) `Object o = list.get(0);` (オ) `List<? super Integer> l2 = new ArrayList<Object>();`"
-    (ア)(エ)(オ)。(イ) Double は Integer の子ではない。(ウ) 取り出しは Object のみ。
+(ア)(エ)(オ)。(イ) Double は Integer の子ではない。(ウ) 取り出しは Object のみ。
+
+</details>
 
 ## まとめ
 
@@ -230,13 +242,13 @@ B bb = a.getValue();                 // ❌ CAP#1 cannot be converted to B
 | `<? extends B>` | B と B の子 | B で受けられる | null だけ |
 | `<? super B>` | B と B の親 | Object | B と B の子 |
 
-PECS
-:   Producer-Extends, Consumer-Super。値を出す側（取り出し専用）は `extends`、値を受け取る側（入れる専用）は `super`。
+- **PECS**：Producer-Extends, Consumer-Super。値を出す側（取り出し専用）は `extends`、値を受け取る側（入れる専用）は `super`。
 
-!!! warning "よくある誤解"
-    - `<?>` は「何でも入る」ではない。入るのは null だけ
-    - `<? extends>` に子の値を add できそうに見えるが、null しか入らない
-    - `<? super B>` には B 自身も含まれる
+> **よくある誤解**
+>
+> - `<?>` は「何でも入る」ではない。入るのは null だけ
+> - `<? extends>` に子の値を add できそうに見えるが、null しか入らない
+> - `<? super B>` には B 自身も含まれる
 
 確認環境：JDK 21。エラーメッセージは javac の実際の出力。
 
